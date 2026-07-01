@@ -20,7 +20,7 @@ export default function ProtectedRoute({ children, rolesPermitidos }) {
   try {
     user = JSON.parse(localStorage.getItem("user") || "null");
   } catch {
-    user = null;
+    // ignore parse errors, user remains null
   }
 
   if (!token || !user) {

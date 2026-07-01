@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import api from "../services/api";
 
@@ -15,11 +16,6 @@ export default function Usuarios() {
     rol_id: "",
     estado: "ACTIVO",
   });
-
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
   const cargarDatos = async () => {
     try {
       const resUsuarios = await api.get("/usuarios");
@@ -32,6 +28,10 @@ export default function Usuarios() {
       alert("Error al cargar usuarios");
     }
   };
+
+  useEffect(() => {
+    cargarDatos();
+  }, []);
 
   const guardarUsuario = async (e) => {
     e.preventDefault();
@@ -95,12 +95,17 @@ export default function Usuarios() {
   };
 
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">Usuarios</h1>
+    <div className="min-h-screen space-y-6">
+      <div className="card section-card p-6 border-primary-100">
+        <div className="mb-2">
+          <h1 className="text-3xl font-extrabold text-primary">Usuarios</h1>
+          <p className="text-sm text-muted">Crea, edita y administra usuarios del sistema</p>
+        </div>
+      </div>
 
       <form
         onSubmit={guardarUsuario}
-        className="bg-white p-6 rounded-xl shadow mb-8 grid grid-cols-1 md:grid-cols-5 gap-4"
+        className="card p-6 mb-8 grid grid-cols-1 md:grid-cols-5 gap-4 border-primary-100"
       >
         <input
           className="border p-3 rounded"
@@ -153,7 +158,7 @@ export default function Usuarios() {
           <option value="INACTIVO">INACTIVO</option>
         </select>
 
-        <button className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold p-3 rounded md:col-span-5">
+        <button className="btn-primary font-bold p-3 rounded md:col-span-5">
           {editando ? "Actualizar Usuario" : "Guardar Usuario"}
         </button>
 
@@ -161,17 +166,17 @@ export default function Usuarios() {
           <button
             type="button"
             onClick={limpiarFormulario}
-            className="bg-gray-700 text-white font-bold p-3 rounded md:col-span-5"
+            className="btn-outline-primary font-bold p-3 rounded md:col-span-5"
           >
             Cancelar edición
           </button>
         )}
       </form>
 
-      <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+      <div className="card p-4 overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="bg-black text-white">
+            <tr style={{ background: 'var(--primary)' }} className="text-white">
               <th className="p-3">ID</th>
               <th className="p-3">Nombre</th>
               <th className="p-3">Email</th>
@@ -193,8 +198,8 @@ export default function Usuarios() {
                   <span
                     className={
                       usuario.estado === "ACTIVO"
-                        ? "bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold"
-                        : "bg-red-100 text-red-700 px-3 py-1 rounded-full font-bold"
+                        ? "badge-success"
+                        : "badge-danger"
                     }
                   >
                     {usuario.estado}
@@ -204,14 +209,14 @@ export default function Usuarios() {
                 <td className="p-3 flex gap-2 justify-center">
                   <button
                     onClick={() => editarUsuario(usuario)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
+                    className="btn-secondary text-primary font-semibold px-3 py-1 rounded"
                   >
                     Editar
                   </button>
 
                   <button
                     onClick={() => eliminarUsuario(usuario.id)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                    className="btn-danger font-semibold px-3 py-1 rounded"
                   >
                     Eliminar
                   </button>

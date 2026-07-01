@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import api from "../services/api";
 
@@ -7,11 +8,6 @@ export default function Condiciones() {
   const [editando, setEditando] = useState(false);
   const [idEditando, setIdEditando] = useState(null);
   const [estado, setEstado] = useState("ACTIVO");
-
-  useEffect(() => {
-    cargarCondiciones();
-  }, []);
-
   const cargarCondiciones = async () => {
     try {
       const response = await api.get("/condiciones");
@@ -21,6 +17,10 @@ export default function Condiciones() {
       alert("Error al cargar condiciones");
     }
   };
+
+  useEffect(() => {
+    cargarCondiciones();
+  }, []);
 
   const guardarCondicion = async (e) => {
     e.preventDefault();
@@ -81,14 +81,14 @@ export default function Condiciones() {
   };
 
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">
+    <div className="p-8 bg-[var(--bg)] min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-slate-900">
         Condiciones del Servicio
       </h1>
 
       <form
         onSubmit={guardarCondicion}
-        className="bg-white p-6 rounded-xl shadow mb-8 grid grid-cols-1 md:grid-cols-4 gap-4"
+        className="card section-card p-6 mb-8 grid grid-cols-1 md:grid-cols-4 gap-4"
       >
         <textarea
           className="border p-3 rounded md:col-span-3"
@@ -109,7 +109,7 @@ export default function Condiciones() {
 
         <button
           type="submit"
-          className="bg-yellow-500 hover:bg-yellow-600 font-bold p-3 rounded"
+          className="btn-primary font-bold p-3 rounded"
         >
           {editando ? "Actualizar" : "Guardar"}
         </button>
@@ -125,10 +125,10 @@ export default function Condiciones() {
         )}
       </form>
 
-      <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+      <div className="card p-4 overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="bg-black text-white">
+            <tr className="table-header-primary text-white">
               <th className="p-3">ID</th>
               <th className="p-3">Descripción</th>
               <th className="p-3">Estado</th>
@@ -140,7 +140,7 @@ export default function Condiciones() {
             {condiciones.map((condicion) => (
               <tr
                 key={condicion.id}
-                className="border-b text-center hover:bg-gray-100"
+                className="border-b text-center hover:bg-[var(--surface-soft)]"
               >
                 <td className="p-3">{condicion.id}</td>
 
@@ -152,8 +152,8 @@ export default function Condiciones() {
                   <span
                     className={
                       condicion.estado === "ACTIVO"
-                        ? "bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold"
-                        : "bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold"
+                        ? "badge-success"
+                        : "badge-danger"
                     }
                   >
                     {condicion.estado}
@@ -163,14 +163,14 @@ export default function Condiciones() {
                 <td className="p-3 flex gap-2 justify-center">
                   <button
                     onClick={() => editarCondicion(condicion)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
+                    className="btn-secondary text-primary font-semibold px-3 py-1 rounded"
                   >
                     Editar
                   </button>
 
                   <button
                     onClick={() => eliminarCondicion(condicion.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                    className="btn-danger font-semibold px-3 py-1 rounded"
                   >
                     Eliminar
                   </button>

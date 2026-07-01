@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import { generarFacturaPDF } from "../utils/generarFacturaPDF";
@@ -5,11 +6,6 @@ import { generarFacturaPDF } from "../utils/generarFacturaPDF";
 export default function Facturas() {
   const [facturas, setFacturas] = useState([]);
   const [cargandoPDF, setCargandoPDF] = useState(null);
-
-  useEffect(() => {
-    cargarFacturas();
-  }, []);
-
   const cargarFacturas = async () => {
     try {
       const response = await api.get("/facturas");
@@ -19,6 +15,10 @@ export default function Facturas() {
       alert("Error al cargar facturas");
     }
   };
+
+  useEffect(() => {
+    cargarFacturas();
+  }, []);
 
   const anularFactura = async (id) => {
     if (!confirm("¿Seguro que deseas anular esta factura?")) return;
@@ -56,13 +56,18 @@ export default function Facturas() {
   };
 
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">Facturas</h1>
+    <div className="min-h-screen space-y-6">
+      <div className="card section-card p-6 border-primary-100">
+        <div className="mb-2">
+          <h1 className="text-3xl font-extrabold text-primary">Facturas</h1>
+          <p className="text-sm text-muted">Listado de facturas y generación de PDF</p>
+        </div>
+      </div>
 
-      <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+      <div className="card p-4 overflow-x-auto border-primary-100">
         <table className="w-full">
           <thead>
-            <tr className="bg-black text-white">
+            <tr className="table-header-primary text-white">
               <th className="p-3">Factura</th>
               <th className="p-3">Fecha</th>
               <th className="p-3">Cotización</th>
@@ -101,8 +106,8 @@ export default function Facturas() {
                   <span
                     className={
                       factura.estado === "EMITIDA"
-                        ? "bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold"
-                        : "bg-red-100 text-red-700 px-3 py-1 rounded-full font-bold"
+                        ? "badge-success"
+                        : "badge-danger"
                     }
                   >
                     {factura.estado}
@@ -113,7 +118,7 @@ export default function Facturas() {
                   <button
                     onClick={() => descargarPDF(factura)}
                     disabled={cargandoPDF === factura.id}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 py-1 rounded"
+                    className="action-btn bg-primary hover:bg-primary-600 disabled:bg-gray-400 text-white"
                   >
                     {cargandoPDF === factura.id ? "..." : "PDF"}
                   </button>
@@ -123,7 +128,7 @@ export default function Facturas() {
                   {factura.estado === "EMITIDA" ? (
                     <button
                       onClick={() => anularFactura(factura.id)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                      className="action-btn btn-danger"
                     >
                       Anular
                     </button>

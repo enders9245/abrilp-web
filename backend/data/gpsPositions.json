@@ -1,0 +1,28 @@
+[
+  {
+    "id": "5-1782873440426",
+    "vehiculo_id": 5,
+    "placa": "CDX-828",
+    "conductor": "Sin conductor",
+    "estado": "En viaje",
+    "lat": -16.402075817228265,
+    "lng": -71.55579150344046,
+    "velocidad": 59,
+    "bateria": 76,
+    "fecha": "2026-07-01T03:08:58.144Z",
+    "ultimaActualizacion": "30/6/2026, 10:08:58 p. m."
+  },
+  {
+    "id": "NaN-1782874966290",
+    "vehiculo_id": 1,
+    "placa": "CDX-828",
+    "conductor": "Sin conductor",
+    "estado": "En viaje",
+    "lat": -16.40135780891706,
+    "lng": -71.55533743673327,
+    "velocidad": 90,
+    "bateria": 76,
+    "fecha": "2026-07-01T03:08:58.144Z",
+    "ultimaActualizacion": "30/6/2026, 10:08:58 p. m."
+  }
+]

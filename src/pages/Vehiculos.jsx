@@ -1,7 +1,11 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function Vehiculos() {
+  const { user } = useAuth();
+  const esOperador = String(user?.rol || "").toLowerCase() === "operador";
   const [vehiculos, setVehiculos] = useState([]);
   const [editando, setEditando] = useState(false);
   const [vehiculoId, setVehiculoId] = useState(null);
@@ -15,14 +19,19 @@ export default function Vehiculos() {
     estado: "DISPONIBLE",
   });
 
+  const cargarVehiculos = async () => {
+    try {
+      const response = await api.get("/vehiculos");
+      setVehiculos(response.data);
+    } catch (error) {
+      console.error(error);
+      alert("Error al cargar vehículos");
+    }
+  };
+
   useEffect(() => {
     cargarVehiculos();
   }, []);
-
-  const cargarVehiculos = async () => {
-    const response = await api.get("/vehiculos");
-    setVehiculos(response.data);
-  };
 
   const limpiarFormulario = () => {
     setForm({
@@ -88,34 +97,38 @@ export default function Vehiculos() {
   };
 
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">Vehículos</h1>
+    <div className="min-h-screen">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2 text-primary">Vehículos</h1>
+        <p className="text-sm text-muted">Registra y administra la flota</p>
+      </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-xl shadow">
-          <h3 className="text-gray-500">Total Vehículos</h3>
+        <div className="card p-4">
+          <h3 className="text-sm text-muted">Total Vehículos</h3>
           <h2 className="text-3xl font-bold">{vehiculos.length}</h2>
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow">
-          <h3 className="text-gray-500">Disponibles</h3>
-          <h2 className="text-3xl font-bold text-green-600">
+        <div className="card p-4">
+          <h3 className="text-sm text-muted">Disponibles</h3>
+          <h2 className="text-3xl font-bold text-primary">
             {vehiculos.filter((v) => v.estado === "DISPONIBLE").length}
           </h2>
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow">
-          <h3 className="text-gray-500">Mantenimiento</h3>
-          <h2 className="text-3xl font-bold text-yellow-600">
+        <div className="card p-4">
+          <h3 className="text-sm text-muted">Mantenimiento</h3>
+          <h2 className="text-3xl font-bold text-primary">
             {vehiculos.filter((v) => v.estado === "MANTENIMIENTO").length}
           </h2>
         </div>
       </div>
 
-      <form
-        onSubmit={guardarVehiculo}
-        className="bg-white p-6 rounded-xl shadow mb-8 grid grid-cols-1 md:grid-cols-6 gap-4"
-      >
+      {!esOperador && (
+        <form
+          onSubmit={guardarVehiculo}
+          className="card p-6 mb-8 grid grid-cols-1 md:grid-cols-6 gap-4"
+        >
         <input
           className="border p-3 rounded"
           placeholder="Placa"
@@ -165,28 +178,32 @@ export default function Vehiculos() {
           <option value="MANTENIMIENTO">MANTENIMIENTO</option>
         </select>
 
-        <button
-          type="submit"
-          className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold p-3 rounded"
-        >
+        <button type="submit" className="btn-primary font-bold p-3 rounded">
           {editando ? "Actualizar Vehículo" : "Guardar Vehículo"}
         </button>
 
-        {editando && (
-          <button
-            type="button"
-            onClick={limpiarFormulario}
-            className="bg-gray-700 hover:bg-gray-800 text-white font-bold p-3 rounded"
-          >
-            Cancelar
-          </button>
-        )}
-      </form>
+          {editando && (
+            <button
+              type="button"
+              onClick={limpiarFormulario}
+              className="bg-gray-700 hover:bg-gray-800 text-white font-bold p-3 rounded"
+            >
+              Cancelar
+            </button>
+          )}
+        </form>
+      )}
 
-      <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+      {esOperador && (
+        <div className="mb-6 rounded-2xl border border-[#eadfe8] bg-[#fcf7fa] p-4 text-sm text-muted">
+          Tu rol permite ver la información de vehículos, pero no editar ni modificar registros.
+        </div>
+      )}
+
+      <div className="card p-4 overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b bg-black text-white">
+            <tr style={{ background: 'var(--primary)' }} className="text-white">
               <th className="p-3">ID</th>
               <th className="p-3">Placa</th>
               <th className="p-3">Marca</th>
@@ -202,7 +219,7 @@ export default function Vehiculos() {
             {vehiculos.map((vehiculo) => (
               <tr
                 key={vehiculo.id}
-                className="border-b text-center hover:bg-gray-100"
+                className="border-b text-center hover:bg-[var(--surface-soft)]"
               >
                 <td className="p-3">{vehiculo.id}</td>
                 <td className="p-3">{vehiculo.placa}</td>
@@ -215,10 +232,10 @@ export default function Vehiculos() {
                   <span
                     className={
                       vehiculo.estado === "DISPONIBLE"
-                        ? "bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold"
+                        ? "badge-success"
                         : vehiculo.estado === "OCUPADO"
-                        ? "bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold"
-                        : "bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm font-bold"
+                        ? "badge-danger"
+                        : "badge-primary"
                     }
                   >
                     {vehiculo.estado}
@@ -226,19 +243,25 @@ export default function Vehiculos() {
                 </td>
 
                 <td className="p-3 flex gap-2 justify-center">
-                  <button
-                    onClick={() => editarVehiculo(vehiculo)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
-                  >
-                    Editar
-                  </button>
+                  {!esOperador && (
+                    <>
+                      <button
+                        onClick={() => editarVehiculo(vehiculo)}
+                        className="btn-secondary text-primary font-semibold px-3 py-1 rounded"
+                      >
+                        Editar
+                      </button>
 
-                  <button
-                    onClick={() => eliminarVehiculo(vehiculo.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                  >
-                    Eliminar
-                  </button>
+                      <button
+                        onClick={() => eliminarVehiculo(vehiculo.id)}
+                        className="btn-danger font-semibold px-3 py-1 rounded"
+                      >
+                        Eliminar
+                      </button>
+                    </>
+                  )}
+
+                  {esOperador && <span className="text-sm text-muted">Solo lectura</span>}
                 </td>
               </tr>
             ))}

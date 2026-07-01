@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
@@ -11,9 +11,12 @@ import Implementaciones from "../pages/Implementaciones";
 import ConfiguracionEmpresa from "../pages/ConfiguracionEmpresa";
 import Usuarios from "../pages/Usuarios";
 import Roles from "../pages/Roles";
+import MonitoreoGps from "../pages/MonitoreoGps";
+import NotFound from "../pages/NotFound";
 import ProtectedRoute from "./ProtectedRoute";
 import Layout from "../layouts/DashboardLayout";
 import Inicio from "../pages/Inicio";
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -57,6 +60,17 @@ export default function AppRoutes() {
           <ProtectedRoute rolesPermitidos={["Administrador", "Operador"]}>
             <Layout>
               <Vehiculos />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/monitoreo-gps"
+        element={
+          <ProtectedRoute rolesPermitidos={["Administrador", "Operador"]}>
+            <Layout>
+              <MonitoreoGps />
             </Layout>
           </ProtectedRoute>
         }
@@ -127,6 +141,7 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

@@ -1,7 +1,21 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import { generarCotizacionPDF } from "../utils/generarCotizacionPDF";
+
+const RESPONSABILIDADES_DEFAULT = {
+  dueno: [
+    "Transporte de Arequipa a Espinar.",
+    "Mantenimiento preventivo del vehículo.",
+    "Desgaste normal de llantas.",
+    "Fallas mecánicas y eléctricas.",
+  ],
+  contratante: [
+    "Choques ocasionados durante la operación.",
+    "Daños operacionales del vehículo.",
+  ],
+};
 
 export default function Cotizaciones() {
   const [cotizaciones, setCotizaciones] = useState([]);
@@ -18,6 +32,9 @@ export default function Cotizaciones() {
     descripcion: "",
   });
 
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("TODOS");
+
   const [item, setItem] = useState({
     vehiculo_id: "",
     descripcion: "",
@@ -25,11 +42,22 @@ export default function Cotizaciones() {
   });
 
   const [items, setItems] = useState([]);
+  const [responsabilidades, setResponsabilidades] = useState(() => {
+    try {
+      const guardadas = localStorage.getItem("responsabilidades_cotizacion");
+      if (guardadas) {
+        return JSON.parse(guardadas);
+      }
+    } catch {
+      // usar valores por defecto si no hay almacenamiento válido
+    }
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
+    return RESPONSABILIDADES_DEFAULT;
+  });
+  const [responsabilidadInput, setResponsabilidadInput] = useState({
+    texto: "",
+    tipo: "dueno",
+  });
   const cargarDatos = async () => {
     try {
       const [resCot, resCli, resVeh] = await Promise.all([
@@ -46,6 +74,17 @@ export default function Cotizaciones() {
       alert("Error al cargar datos");
     }
   };
+
+  useEffect(() => {
+    cargarDatos();
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "responsabilidades_cotizacion",
+      JSON.stringify(responsabilidades)
+    );
+  }, [responsabilidades]);
 
   const vehiculoItemSeleccionado = vehiculos.find(
     (v) => String(v.id) === String(item.vehiculo_id)
@@ -93,6 +132,32 @@ export default function Cotizaciones() {
   const totalDia = subtotalDia + igvDia;
   const totalMensual = totalDia * 30;
 
+  const agregarResponsabilidad = () => {
+    const texto = responsabilidadInput.texto.trim();
+
+    if (!texto) {
+      alert("Escribe una responsabilidad antes de agregarla");
+      return;
+    }
+
+    setResponsabilidades((prev) => ({
+      ...prev,
+      [responsabilidadInput.tipo]: [
+        ...prev[responsabilidadInput.tipo],
+        texto,
+      ],
+    }));
+
+    setResponsabilidadInput((prev) => ({ ...prev, texto: "" }));
+  };
+
+  const eliminarResponsabilidad = (tipo, index) => {
+    setResponsabilidades((prev) => ({
+      ...prev,
+      [tipo]: prev[tipo].filter((_, i) => i !== index),
+    }));
+  };
+
   const limpiarFormulario = () => {
     setForm({
       cliente_id: "",
@@ -121,11 +186,11 @@ export default function Cotizaciones() {
 
     try {
       const data = {
-  ...form,
-  fecha: form.fecha,
-  servicio: items[0].descripcion,
-  items,
-};
+        ...form,
+        fecha: form.fecha,
+        servicio: items[0]?.descripcion || form.descripcion,
+        items,
+      };
 
       if (editando) {
         await api.put(`/cotizaciones/${idEditando}`, data);
@@ -231,7 +296,8 @@ export default function Cotizaciones() {
           implementaciones: resImplementaciones.data,
         },
         resEmpresa.data,
-        resCondiciones.data
+        resCondiciones.data,
+        responsabilidades
       );
     } catch (error) {
       console.error(error);
@@ -246,50 +312,82 @@ export default function Cotizaciones() {
     return String(fecha).split("T")[0];
   };
 
+  const totalCotizaciones = cotizaciones.length;
+  const pendientes = cotizaciones.filter((cot) => cot.estado === "PENDIENTE").length;
+  const aprobadas = cotizaciones.filter((cot) => cot.estado === "APROBADA").length;
+  const montoTotal = cotizaciones.reduce((acc, cot) => acc + Number(cot.total || 0), 0);
+
+  const cotizacionesFiltradas = cotizaciones.filter((cot) => {
+    const texto = `${cot.codigo || ""} ${cot.cliente || ""} ${cot.servicio || ""}`.toLowerCase();
+    const coincideBusqueda = texto.includes(busqueda.trim().toLowerCase());
+    const coincideEstado = filtroEstado === "TODOS" || cot.estado === filtroEstado;
+    return coincideBusqueda && coincideEstado;
+  });
+
+  const getEstadoBadge = (estado) => {
+    switch (estado) {
+      case "APROBADA":
+        return "status-badge status-approved";
+      case "RECHAZADA":
+        return "status-badge status-rejected";
+      default:
+        return "status-badge status-pending";
+    }
+  };
+
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Cotizaciones</h1>
+    <div className="min-h-screen space-y-6">
+      <div className="card section-card p-6 border-primary-100">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div>
+            <p className="mb-2 text-sm font-semibold uppercase tracking-[0.32em] text-[#a43f63]">
+              Gestión profesional
+            </p>
+            <h1 className="text-3xl font-extrabold text-primary">Cotizaciones</h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted">
+              Crea, revisa y aprueba propuestas con una experiencia más ordenada, rápida y lista para presentar a clientes.
+            </p>
+          </div>
 
-        <div className="flex gap-3">
-          <Link
-            to="/vehiculos"
-            className="bg-blue-600 text-white px-4 py-2 rounded font-bold"
-          >
-            Editar Vehículos
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link to="/vehiculos" className="btn-outline-primary px-4 py-2 rounded font-bold">
+              Editar Vehículos
+            </Link>
 
-          <Link
-            to="/implementaciones"
-            className="bg-green-600 text-white px-4 py-2 rounded font-bold"
-          >
-            Editar Implementación
-          </Link>
+            <Link to="/implementaciones" className="btn-outline-primary px-4 py-2 rounded font-bold">
+              Editar Implementación
+            </Link>
 
-          <Link
-            to="/condiciones"
-            className="bg-black text-white px-4 py-2 rounded font-bold"
-          >
-            Editar Condiciones
-          </Link>
+            <Link to="/condiciones" className="btn-outline-primary px-4 py-2 rounded font-bold">
+              Editar Condiciones
+            </Link>
+          </div>
         </div>
       </div>
 
-      <form
-        onSubmit={guardarCotizacion}
-        className="bg-white p-6 rounded-xl shadow mb-8"
-      >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">
-            {editando ? "Editar Cotización" : "Nueva Cotización"}
-          </h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="card p-4 border-primary-100">
+          <p className="text-sm text-muted">Total de cotizaciones</p>
+          <p className="mt-2 text-3xl font-black text-primary">{totalCotizaciones}</p>
+        </div>
+
+        <div className="card p-4 border-primary-100">
+          <p className="text-sm text-muted">Pendientes</p>
+          <p className="mt-2 text-3xl font-black text-[#a35a2d]">{pendientes}</p>
+        </div>
+
+        <div className="card p-4 border-primary-100">
+          <p className="text-sm text-muted">Monto total</p>
+          <p className="mt-2 text-3xl font-black text-[#2f8f61]">S/ {montoTotal.toFixed(2)}</p>
+        </div>
+      </div>
+
+      <form onSubmit={guardarCotizacion} className="card p-6 mb-8 border-primary-100">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <h2 className="text-xl font-bold text-primary">{editando ? "Editar Cotización" : "Nueva Cotización"}</h2>
 
           {editando && (
-            <button
-              type="button"
-              onClick={limpiarFormulario}
-              className="bg-gray-700 text-white px-4 py-2 rounded"
-            >
+            <button type="button" onClick={limpiarFormulario} className="bg-gray-700 text-white px-4 py-2 rounded">
               Cancelar edición
             </button>
           )}
@@ -297,7 +395,7 @@ export default function Cotizaciones() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <select
-            className="border p-3 rounded"
+            className="form-control"
             value={form.cliente_id}
             onChange={(e) =>
               setForm({ ...form, cliente_id: e.target.value })
@@ -314,22 +412,105 @@ export default function Cotizaciones() {
 
        <input
   type="date"
-  className="border p-3 rounded"
+  className="form-control"
   value={form.fecha}
   onChange={(e) => setForm({ ...form, fecha: e.target.value })}
   required
 />
         </div>
 
-        <textarea
-          className="border p-3 rounded w-full mb-6"
-          rows="3"
-          placeholder="PRESENTE: Texto de presentación"
-          value={form.descripcion}
-          onChange={(e) =>
-            setForm({ ...form, descripcion: e.target.value })
-          }
-        />
+        <textarea className="form-control w-full mb-6" rows="3" placeholder="PRESENTE: Texto de presentación" value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
+
+        <div className="card p-4 mb-6 border-primary-100">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+            <div>
+              <h3 className="text-lg font-bold text-primary">Responsabilidades del servicio</h3>
+              <p className="text-sm text-muted">Edita quién asume cada responsabilidad para la cotización y el PDF.</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setResponsabilidades(RESPONSABILIDADES_DEFAULT)}
+              className="btn-secondary px-3 py-2 rounded"
+            >
+              Restablecer
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_180px_auto] gap-3 mb-4">
+            <input
+              className="form-control"
+              placeholder="Agregar responsabilidad"
+              value={responsabilidadInput.texto}
+              onChange={(e) =>
+                setResponsabilidadInput((prev) => ({
+                  ...prev,
+                  texto: e.target.value,
+                }))
+              }
+            />
+
+            <select
+              className="form-control"
+              value={responsabilidadInput.tipo}
+              onChange={(e) =>
+                setResponsabilidadInput((prev) => ({
+                  ...prev,
+                  tipo: e.target.value,
+                }))
+              }
+            >
+              <option value="dueno">Dueño del vehículo</option>
+              <option value="contratante">Empresa contratante</option>
+            </select>
+
+            <button
+              type="button"
+              onClick={agregarResponsabilidad}
+              className="btn-primary px-4 py-2 rounded"
+            >
+              Agregar
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-[#eadfe8] bg-[#f9f2f6] p-4">
+              <h4 className="font-semibold text-primary mb-3">Asume el Dueño del Vehículo</h4>
+              <ul className="space-y-2">
+                {responsabilidades.dueno.map((item, index) => (
+                  <li key={`${item}-${index}`} className="flex items-start justify-between gap-2 rounded-xl bg-white px-3 py-2 text-sm">
+                    <span>{item}</span>
+                    <button
+                      type="button"
+                      onClick={() => eliminarResponsabilidad("dueno", index)}
+                      className="text-xs font-semibold text-[#7a1f3d]"
+                    >
+                      Quitar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-2xl border border-[#eadfe8] bg-[#fbf6ef] p-4">
+              <h4 className="font-semibold text-[#a35a2d] mb-3">Asume la Empresa Contratante</h4>
+              <ul className="space-y-2">
+                {responsabilidades.contratante.map((item, index) => (
+                  <li key={`${item}-${index}`} className="flex items-start justify-between gap-2 rounded-xl bg-white px-3 py-2 text-sm">
+                    <span>{item}</span>
+                    <button
+                      type="button"
+                      onClick={() => eliminarResponsabilidad("contratante", index)}
+                      className="text-xs font-semibold text-[#a35a2d]"
+                    >
+                      Quitar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
 
         <h2 className="text-xl font-bold mb-4">
           Propuesta Económica - Ítems por Vehículo
@@ -337,7 +518,7 @@ export default function Cotizaciones() {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <select
-            className="border p-3 rounded"
+            className="form-control"
             value={item.vehiculo_id}
             onChange={(e) =>
               setItem({ ...item, vehiculo_id: e.target.value })
@@ -352,7 +533,7 @@ export default function Cotizaciones() {
           </select>
 
           <input
-            className="border p-3 rounded"
+            className="form-control"
             placeholder="Descripción del servicio"
             value={item.descripcion}
             onChange={(e) =>
@@ -361,7 +542,7 @@ export default function Cotizaciones() {
           />
 
           <input
-            className="border p-3 rounded bg-gray-100"
+            className="form-control bg-[var(--surface-soft)]"
             value={
               vehiculoItemSeleccionado
                 ? `${vehiculoItemSeleccionado.placa} - ${vehiculoItemSeleccionado.marca} ${vehiculoItemSeleccionado.modelo}`
@@ -371,7 +552,7 @@ export default function Cotizaciones() {
           />
 
           <input
-            className="border p-3 rounded"
+            className="form-control"
             type="number"
             step="0.01"
             placeholder="Precio por día sin IGV"
@@ -381,7 +562,7 @@ export default function Cotizaciones() {
         </div>
 
         {vehiculoItemSeleccionado && (
-          <div className="bg-gray-50 border rounded-xl p-4 mb-6">
+          <div className="card p-4 mb-6">
             <h3 className="font-bold mb-2">Vehículo seleccionado</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
@@ -395,18 +576,14 @@ export default function Cotizaciones() {
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={agregarItem}
-          className="bg-black text-white px-4 py-2 rounded mb-6"
-        >
+        <button type="button" onClick={agregarItem} className="btn-primary px-4 py-2 rounded mb-6">
           Agregar Ítem
         </button>
 
-        <div className="bg-gray-50 rounded-xl p-4 mb-6 overflow-x-auto">
+        <div className="card p-4 mb-6 overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-black text-white">
+              <tr className="table-header-primary text-white">
                 <th className="p-2">N°</th>
                 <th className="p-2">DESCRIPCIÓN</th>
                 <th className="p-2">UNIDAD VEHICULAR</th>
@@ -435,7 +612,7 @@ export default function Cotizaciones() {
                     <button
                       type="button"
                       onClick={() => eliminarItem(index)}
-                      className="bg-red-500 text-white px-3 py-1 rounded"
+                      className="action-btn btn-danger"
                     >
                       Quitar
                     </button>
@@ -454,7 +631,7 @@ export default function Cotizaciones() {
           </table>
         </div>
 
-        <div className="bg-yellow-50 border border-yellow-300 p-4 rounded-xl mb-6">
+        <div className="card p-4 mb-6" style={{ borderColor: 'var(--border)' }}>
           <p>Subtotal por día: S/ {subtotalDia.toFixed(2)}</p>
           <p>IGV 18%: S/ {igvDia.toFixed(2)}</p>
 
@@ -467,15 +644,42 @@ export default function Cotizaciones() {
           </p>
         </div>
 
-        <button className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold p-3 rounded w-full">
+        <button className="btn-primary font-bold p-3 rounded w-full">
           {editando ? "Actualizar Cotización" : "Generar Cotización"}
         </button>
       </form>
 
-      <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+      <div className="card p-4 overflow-x-auto">
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-primary">Historial de cotizaciones</h3>
+            <p className="text-sm text-muted">Filtra por estado o búsqueda rápida para encontrar propuestas de forma inmediata.</p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              className="form-control min-w-[220px]"
+              placeholder="Buscar por código, cliente o servicio"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+
+            <select
+              className="form-control min-w-[150px]"
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value)}
+            >
+              <option value="TODOS">Todos</option>
+              <option value="PENDIENTE">Pendientes</option>
+              <option value="APROBADA">Aprobadas</option>
+              <option value="RECHAZADA">Rechazadas</option>
+            </select>
+          </div>
+        </div>
+
         <table className="w-full">
           <thead>
-            <tr className="bg-black text-white">
+            <tr style={{ background: 'var(--primary)' }} className="text-white">
               <th className="p-3">Código</th>
               <th className="p-3">Fecha</th>
               <th className="p-3">Cliente</th>
@@ -492,7 +696,7 @@ export default function Cotizaciones() {
           </thead>
 
           <tbody>
-            {cotizaciones.map((cot) => (
+            {cotizacionesFiltradas.map((cot) => (
               <tr key={cot.id} className="border-b text-center">
                 <td className="p-3 font-bold">{cot.codigo}</td>
 
@@ -519,8 +723,9 @@ export default function Cotizaciones() {
                 </td>
 
                 <td className="p-3">
+                  <span className={getEstadoBadge(cot.estado)}>{cot.estado}</span>
                   <select
-                    className="border p-2 rounded"
+                    className="form-control mt-2"
                     value={cot.estado}
                     onChange={(e) =>
                       cambiarEstado(cot.id, e.target.value)
@@ -532,12 +737,9 @@ export default function Cotizaciones() {
                   </select>
                 </td>
 
-                <td className="p-3">
+                <td className="p-3 text-center">
                   {cot.estado === "APROBADA" ? (
-                    <button
-                      onClick={() => generarFactura(cot)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded"
-                    >
+                    <button onClick={() => generarFactura(cot)} className="action-btn bg-primary hover:bg-primary-600 text-white px-3 py-2 rounded-full text-sm">
                       Factura
                     </button>
                   ) : (
@@ -545,38 +747,30 @@ export default function Cotizaciones() {
                   )}
                 </td>
 
-                <td className="p-3">
-                  <button
-                    onClick={() => descargarPDF(cot)}
-                    disabled={cargandoPDF === cot.id}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 py-1 rounded"
-                  >
+                <td className="p-3 text-center">
+                  <button onClick={() => descargarPDF(cot)} disabled={cargandoPDF === cot.id} className="action-btn bg-primary hover:bg-primary-600 disabled:bg-gray-400 text-white px-3 py-2 rounded-full text-sm">
                     {cargandoPDF === cot.id ? "..." : "PDF"}
                   </button>
                 </td>
 
-                <td className="p-3 flex gap-2 justify-center">
-                  <button
-                    onClick={() => editarCotizacion(cot)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
-                  >
-                    Editar
-                  </button>
+                <td className="p-3">
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <button onClick={() => editarCotizacion(cot)} className="action-btn bg-primary hover:bg-primary-600 text-white px-3 py-2 rounded-full text-sm">
+                      Editar
+                    </button>
 
-                  <button
-                    onClick={() => eliminarCotizacion(cot.id)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
-                  >
-                    Eliminar
-                  </button>
+                    <button onClick={() => eliminarCotizacion(cot.id)} className="action-btn btn-danger px-3 py-2 rounded-full text-sm">
+                      Eliminar
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
 
-            {cotizaciones.length === 0 && (
+            {cotizacionesFiltradas.length === 0 && (
               <tr>
                 <td colSpan="12" className="text-center p-6 text-gray-500">
-                  No hay cotizaciones registradas
+                  No hay cotizaciones que coincidan con los filtros actuales.
                 </td>
               </tr>
             )}

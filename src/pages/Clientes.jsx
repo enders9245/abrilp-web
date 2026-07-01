@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import api from "../services/api";
 
@@ -12,11 +13,7 @@ export default function Clientes() {
     direccion: "",
   });
 
-  useEffect(() => {
-    cargarClientes();
-  }, []);
-
-  const cargarClientes = async () => {
+  async function cargarClientes() {
     try {
       const response = await api.get("/clientes");
       setClientes(response.data);
@@ -24,7 +21,11 @@ export default function Clientes() {
       console.error(error);
       alert("Error al cargar clientes");
     }
-  };
+  }
+
+  useEffect(() => {
+    cargarClientes();
+  }, []);
 
   const consultarRUC = async () => {
     if (!form.ruc || form.ruc.length !== 11) {
@@ -98,12 +99,17 @@ export default function Clientes() {
   };
 
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">Clientes</h1>
+    <div className="min-h-screen space-y-6">
+      <div className="card section-card p-6 border-primary-100">
+        <div className="mb-2">
+          <h1 className="text-3xl font-extrabold text-primary">Clientes</h1>
+          <p className="text-sm text-muted">Gestiona tus clientes y su información</p>
+        </div>
+      </div>
 
       <form
         onSubmit={crearCliente}
-        className="bg-white p-6 rounded-xl shadow mb-8 grid grid-cols-1 md:grid-cols-4 gap-4"
+        className="card p-6 mb-8 grid grid-cols-1 md:grid-cols-4 gap-4 border-primary-100"
       >
         <input
           className="border p-3 rounded"
@@ -118,7 +124,7 @@ export default function Clientes() {
           type="button"
           onClick={consultarRUC}
           disabled={consultando}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold p-3 rounded"
+          className="btn-outline-primary font-bold p-3 rounded disabled:bg-gray-400 disabled:text-white"
         >
           {consultando ? "Consultando..." : "Consultar RUC"}
         </button>
@@ -147,15 +153,15 @@ export default function Clientes() {
           onChange={(e) => setForm({ ...form, direccion: e.target.value })}
         />
 
-        <button className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold p-3 rounded md:col-span-4">
+        <button className="btn-primary font-bold p-3 rounded md:col-span-4">
           Guardar Cliente
         </button>
       </form>
 
-      <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+      <div className="card p-4 overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="bg-black text-white">
+            <tr style={{ background: 'var(--primary)' }} className="text-white">
               <th className="p-3">ID</th>
               <th className="p-3">Razón Social</th>
               <th className="p-3">RUC</th>
@@ -179,8 +185,8 @@ export default function Clientes() {
                   <select
                     className={
                       cliente.estado === "ACTIVO"
-                        ? "border p-2 rounded bg-green-100 text-green-700 font-bold"
-                        : "border p-2 rounded bg-red-100 text-red-700 font-bold"
+                        ? "form-control badge-success"
+                        : "form-control badge-danger"
                     }
                     value={cliente.estado}
                     onChange={(e) =>
@@ -195,7 +201,7 @@ export default function Clientes() {
                 <td className="p-3">
                   <button
                     onClick={() => eliminarCliente(cliente.id)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                    className="action-btn btn-danger"
                   >
                     Eliminar
                   </button>

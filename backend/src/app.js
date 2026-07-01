@@ -17,6 +17,7 @@ const implementacionesRoutes = require("./routes/implementacionesRoutes");
 const facturasRoutes = require("./routes/facturasRoutes");
 const rolesRoutes = require("./routes/rolesRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const gpsRoutes = require("./routes/gpsRoutes");
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use("/api/implementaciones", implementacionesRoutes);
 app.use("/api/ruc", rucRoutes);
 app.use("/api/facturas", facturasRoutes);
 app.use("/api/roles", rolesRoutes);
+app.use("/api/gps", gpsRoutes);
 
 app.get("/", (req, res) => {
   res.json({

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import api from "../services/api";
 
@@ -11,11 +12,6 @@ export default function Roles() {
     descripcion: "",
     estado: "ACTIVO",
   });
-
-  useEffect(() => {
-    cargarRoles();
-  }, []);
-
   const cargarRoles = async () => {
     try {
       const response = await api.get("/roles");
@@ -25,6 +21,10 @@ export default function Roles() {
       alert("Error al cargar roles");
     }
   };
+
+  useEffect(() => {
+    cargarRoles();
+  }, []);
 
   const guardarRol = async (e) => {
     e.preventDefault();
@@ -84,12 +84,12 @@ export default function Roles() {
   };
 
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">Roles</h1>
+    <div className="p-8 bg-[var(--bg)] min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-slate-900">Roles</h1>
 
       <form
         onSubmit={guardarRol}
-        className="bg-white p-6 rounded-xl shadow mb-8 grid grid-cols-1 md:grid-cols-4 gap-4"
+        className="card section-card p-6 mb-8 grid grid-cols-1 md:grid-cols-4 gap-4"
       >
         <input
           className="border p-3 rounded"
@@ -117,7 +117,7 @@ export default function Roles() {
           <option value="INACTIVO">INACTIVO</option>
         </select>
 
-        <button className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold p-3 rounded md:col-span-4">
+        <button className="btn-primary font-bold p-3 rounded md:col-span-4">
           {editando ? "Actualizar Rol" : "Guardar Rol"}
         </button>
 
@@ -132,10 +132,10 @@ export default function Roles() {
         )}
       </form>
 
-      <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+      <div className="card p-4 overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="bg-black text-white">
+            <tr className="table-header-primary text-white">
               <th className="p-3">ID</th>
               <th className="p-3">Nombre</th>
               <th className="p-3">Descripción</th>
@@ -146,7 +146,7 @@ export default function Roles() {
 
           <tbody>
             {roles.map((rol) => (
-              <tr key={rol.id} className="border-b text-center">
+              <tr key={rol.id} className="border-b text-center hover:bg-[var(--surface-soft)]">
                 <td className="p-3">{rol.id}</td>
                 <td className="p-3 font-bold">{rol.nombre}</td>
                 <td className="p-3">{rol.descripcion}</td>
@@ -155,8 +155,8 @@ export default function Roles() {
                   <span
                     className={
                       rol.estado === "ACTIVO"
-                        ? "bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold"
-                        : "bg-red-100 text-red-700 px-3 py-1 rounded-full font-bold"
+                        ? "badge-success"
+                        : "badge-danger"
                     }
                   >
                     {rol.estado}
@@ -166,14 +166,14 @@ export default function Roles() {
                 <td className="p-3 flex gap-2 justify-center">
                   <button
                     onClick={() => editarRol(rol)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
+                    className="btn-secondary text-primary font-semibold px-3 py-1 rounded"
                   >
                     Editar
                   </button>
 
                   <button
                     onClick={() => eliminarRol(rol.id)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                    className="btn-danger font-semibold px-3 py-1 rounded"
                   >
                     Eliminar
                   </button>

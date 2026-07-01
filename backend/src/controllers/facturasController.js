@@ -142,7 +142,7 @@ const createFacturaDesdeCotizacion = (req, res) => {
 const anularFactura = (req, res) => {
   const { id } = req.params;
 
-  db.query(
+  db.query( 
     "UPDATE facturas SET estado = 'ANULADA' WHERE id = ?",
     [id],
     (err) => {
